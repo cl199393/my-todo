@@ -30,7 +30,8 @@ SOURCE_ICONS = {
 _emergency_notified = set()
 
 
-def fetch_deadlines(days: int = 30) -> list[dict]:
+def fetch_deadlines_today() -> list[dict]:
+    """Return overdue + due today (local midnight to midnight)."""
     if not os.path.exists(DB_PATH):
         return []
     try:
@@ -40,10 +41,9 @@ def fetch_deadlines(days: int = 30) -> list[dict]:
             """
             SELECT * FROM deadlines
             WHERE dismissed = 0
-              AND due_at <= datetime('now', ? || ' days')
+              AND due_at < datetime('now', 'localtime', 'start of day', '+1 day')
             ORDER BY due_at ASC
             """,
-            (str(days),),
         ).fetchall()
         conn.close()
         return [dict(r) for r in rows]
@@ -110,7 +110,7 @@ class DeadlineMenuBar(rumps.App):
         self.refresh_menu()
 
     def refresh_menu(self):
-        self.deadlines = fetch_deadlines(30)
+        self.deadlines = fetch_deadlines_today()
 
         emergency = [d for d in self.deadlines if is_emergency(d["due_at"])]
         urgent    = [d for d in self.deadlines
@@ -201,7 +201,7 @@ class DeadlineMenuBar(rumps.App):
 
         menu_items.append(None)
         menu_items.append(rumps.MenuItem("Refresh", callback=self.on_refresh))
-        menu_items.append(rumps.MenuItem(f"{len(self.deadlines)} deadlines total"))
+        menu_items.append(rumps.MenuItem(f"{len(self.deadlines)} due today"))
         menu_items.append(None)
         menu_items.append(rumps.MenuItem("Quit", callback=rumps.quit_application))
 
