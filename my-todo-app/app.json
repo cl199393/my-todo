@@ -13,7 +13,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.changliu.mytodo"
+      "bundleIdentifier": "com.changliu.mytodo",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -35,6 +38,12 @@
         }
       ],
       "expo-asset"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "83a32cf3-a720-4f62-ba0e-298d59c63812"
+      }
+    },
+    "owner": "lliuchang2018"
   }
 }
