@@ -1,1 +1,22 @@
 todos.json
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+deadline-sync/.venv/
+deadline-sync/deadlines.db
+deadline-sync/auth/token.json
+deadline-sync/auth/credentials.json
+deadline-sync/auth/ms_token_cache.bin
+
+# Node
+my-todo-app/node_modules/
+my-todo-app/.expo/
+my-todo-app/ios/
+my-todo-app/android/
+
+# Xcode
+deadline-menubar/*.xcodeproj/xcuserdata/
+deadline-menubar/*.xcodeproj/project.xcworkspace/
+deadline-menubar/build/

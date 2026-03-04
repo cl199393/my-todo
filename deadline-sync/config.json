@@ -1,0 +1,36 @@
+{
+  "canvas_instances": [
+    {
+      "id": "canvas_gt",
+      "name": "Georgia Tech",
+      "base_url": "https://canvas.gatech.edu",
+      "api_token": "YOUR_GT_TOKEN"
+    },
+    {
+      "id": "canvas_ucf",
+      "name": "UCF",
+      "base_url": "https://webcourses.ucf.edu",
+      "api_token": "***REMOVED***"
+    }
+  ],
+  "microsoft": {
+    "tenant_id": "common",
+    "client_id": "YOUR_AZURE_CLIENT_ID",
+    "refresh_token": ""
+  },
+  "gmail": {
+    "credentials_file": "./auth/credentials.json",
+    "token_file": "./auth/token.json",
+    "keywords": ["due", "deadline", "assignment", "quiz", "exam", "submit by"]
+  },
+  "ical_feeds": [
+    {
+      "id": "canvas_gt",
+      "name": "Georgia Tech",
+      "url": "https://gatech.instructure.com/feeds/calendars/user_***REMOVED***.ics"
+    }
+  ],
+  "sync": { "interval_minutes": 15, "lookahead_days": 30 },
+  "server": { "host": "0.0.0.0", "port": 8765 },
+  "notifications": { "notify_1d_before": true, "notify_1h_before": true }
+}
