@@ -1,4 +1,4 @@
-# My Todo & Deadline Tracker
+# Kanban Board Implementation
 
 A personal productivity system with three components:
 
@@ -48,7 +48,7 @@ Canvas GT (iCal) + Canvas UCF (API) + Gmail + Microsoft
 ## Project Structure
 
 ```
-my-todo/
+kanban-board-implementation/
 ├── todo.py                        # Python CLI todo app
 ├── deadline-sync/                 # Python daemon
 │   ├── main.py                    # Entry point: FastAPI + APScheduler
