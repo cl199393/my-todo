@@ -85,10 +85,16 @@ export default function TodoScreen() {
   }
 
   function deleteTodo(id) {
-    Alert.alert('Delete', 'Remove this todo?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => save(todos.filter(t => t.id !== id)) },
-    ]);
+    if (Platform.OS === 'web') {
+      if (window.confirm('Remove this todo?')) {
+        save(todos.filter(t => t.id !== id));
+      }
+    } else {
+      Alert.alert('Delete', 'Remove this todo?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => save(todos.filter(t => t.id !== id)) },
+      ]);
+    }
   }
 
   return (
@@ -115,8 +121,8 @@ export default function TodoScreen() {
                 </Text>
               )}
             </View>
-            <TouchableOpacity onPress={() => deleteTodo(item.id)}>
-              <Text style={styles.delete}>✕</Text>
+            <TouchableOpacity onPress={() => deleteTodo(item.id)} style={styles.deleteBtn}>
+              <Text style={styles.delete}>🗑</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -178,7 +184,8 @@ const styles = StyleSheet.create({
   todoText: { fontSize: 16, color: '#333' },
   done: { textDecorationLine: 'line-through', color: '#aaa' },
   dateBadge: { fontSize: 11, marginTop: 3, fontWeight: '500' },
-  delete: { fontSize: 16, color: '#f44336', paddingLeft: 10 },
+  deleteBtn: { padding: 6 },
+  delete: { fontSize: 18 },
   empty: { textAlign: 'center', color: '#aaa', marginTop: 40, fontSize: 16 },
   inputArea: {
     backgroundColor: '#fff',
