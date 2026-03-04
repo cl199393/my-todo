@@ -6,6 +6,7 @@ __pycache__/
 *.pyc
 deadline-sync/.venv/
 deadline-sync/deadlines.db
+deadline-sync/config.json
 deadline-sync/auth/token.json
 deadline-sync/auth/credentials.json
 deadline-sync/auth/ms_token_cache.bin
