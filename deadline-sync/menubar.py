@@ -3,7 +3,7 @@
 import sys
 import os
 import sqlite3
-import threading
+import subprocess
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -26,6 +26,9 @@ SOURCE_ICONS = {
     "gmail":      "🔴",
 }
 
+# IDs already notified as emergency this session (avoid repeat alerts)
+_emergency_notified = set()
+
 
 def fetch_deadlines(days: int = 30) -> list[dict]:
     if not os.path.exists(DB_PATH):
@@ -37,7 +40,6 @@ def fetch_deadlines(days: int = 30) -> list[dict]:
             """
             SELECT * FROM deadlines
             WHERE dismissed = 0
-              AND due_at >= datetime('now')
               AND due_at <= datetime('now', ? || ' days')
             ORDER BY due_at ASC
             """,
@@ -49,10 +51,22 @@ def fetch_deadlines(days: int = 30) -> list[dict]:
         return []
 
 
-def relative_time(due_at: str) -> str:
+def seconds_until(due_at: str) -> float:
     try:
         due = datetime.fromisoformat(due_at.replace("Z", "+00:00"))
-        diff = (due - datetime.now(timezone.utc)).total_seconds()
+        return (due - datetime.now(timezone.utc)).total_seconds()
+    except Exception:
+        return float("inf")
+
+
+def is_emergency(due_at: str) -> bool:
+    """Overdue or due within 3 hours."""
+    return seconds_until(due_at) < 3 * 3600
+
+
+def relative_time(due_at: str) -> str:
+    try:
+        diff = seconds_until(due_at)
         if diff < 0:
             return "Overdue"
         d = int(diff // 86400)
@@ -71,11 +85,17 @@ def relative_time(due_at: str) -> str:
 
 def format_date(due_at: str) -> str:
     try:
-        due = datetime.fromisoformat(due_at.replace("Z", "+00:00"))
-        local = due.astimezone()
-        return local.strftime("%b %d %I:%M %p")
+        due = datetime.fromisoformat(due_at.replace("Z", "+00:00")).astimezone()
+        return due.strftime("%b %d %I:%M %p")
     except Exception:
         return due_at[:10]
+
+
+def notify(title: str, message: str, subtitle: str = ""):
+    script = (f'display notification "{message}" '
+              f'with title "{title}"'
+              + (f' subtitle "{subtitle}"' if subtitle else ""))
+    subprocess.run(["osascript", "-e", script], capture_output=True)
 
 
 class DeadlineMenuBar(rumps.App):
@@ -83,7 +103,6 @@ class DeadlineMenuBar(rumps.App):
         super().__init__("📅", quit_button=None)
         self.deadlines = []
         self.refresh_menu()
-        # Refresh every 2 minutes
         self._timer = rumps.Timer(self.on_timer, 120)
         self._timer.start()
 
@@ -92,25 +111,62 @@ class DeadlineMenuBar(rumps.App):
 
     def refresh_menu(self):
         self.deadlines = fetch_deadlines(30)
-        urgent = [d for d in self.deadlines
-                  if (datetime.fromisoformat(d["due_at"].replace("Z", "+00:00"))
-                      - datetime.now(timezone.utc)).total_seconds() < 86400]
 
-        # Update title
-        if urgent:
+        emergency = [d for d in self.deadlines if is_emergency(d["due_at"])]
+        urgent    = [d for d in self.deadlines
+                     if not is_emergency(d["due_at"]) and seconds_until(d["due_at"]) < 86400]
+        normal    = [d for d in self.deadlines
+                     if not is_emergency(d["due_at"]) and seconds_until(d["due_at"]) >= 86400]
+
+        # ── Menu bar title ──────────────────────────────────────────────
+        if emergency:
+            first = emergency[0]
+            short = first["title"][:30] + "…" if len(first["title"]) > 30 else first["title"]
+            extra = f" +{len(emergency)-1}" if len(emergency) > 1 else ""
+            self.title = f"🚨 {short}{extra}"
+        elif urgent:
             self.title = f"📅 {len(urgent)}"
         else:
             self.title = "📅"
 
-        # Rebuild menu
+        # ── Fire immediate notifications for new emergencies ─────────────
+        for d in emergency:
+            if d["id"] not in _emergency_notified:
+                _emergency_notified.add(d["id"])
+                diff = seconds_until(d["due_at"])
+                msg = "Overdue!" if diff < 0 else f"Due in {relative_time(d['due_at'])}!"
+                source = SOURCE_LABELS.get(d["source"], d["source"])
+                notify(f"🚨 {d['title'][:50]}", msg, source)
+
+        # ── Rebuild menu ─────────────────────────────────────────────────
         menu_items = []
+
+        # Emergency section (pinned at top)
+        if emergency:
+            menu_items.append(rumps.MenuItem("🚨  EMERGENCY"))
+            for d in emergency:
+                timer = relative_time(d["due_at"])
+                title = d["title"][:40] + "…" if len(d["title"]) > 40 else d["title"]
+                source = SOURCE_LABELS.get(d["source"], d["source"])
+                menu_items.append(rumps.MenuItem(f"   [{timer}] {title}  ({source})"))
+            menu_items.append(None)
 
         if not self.deadlines:
             menu_items.append(rumps.MenuItem("No upcoming deadlines"))
         else:
+            # Urgent section
+            if urgent:
+                menu_items.append(rumps.MenuItem("⚠️  Due within 24h"))
+                for d in urgent:
+                    icon = SOURCE_ICONS.get(d["source"], "⚪")
+                    timer = relative_time(d["due_at"])
+                    title = d["title"][:40] + "…" if len(d["title"]) > 40 else d["title"]
+                    menu_items.append(rumps.MenuItem(f"   {icon} [{timer}] {title}"))
+                menu_items.append(None)
+
+            # Normal deadlines grouped by date
             current_date = None
-            for d in self.deadlines[:20]:  # cap at 20 items
-                # Date section header
+            for d in normal[:15]:
                 try:
                     due_dt = datetime.fromisoformat(d["due_at"].replace("Z", "+00:00")).astimezone()
                     date_label = due_dt.strftime("%a, %b %d")
@@ -119,20 +175,16 @@ class DeadlineMenuBar(rumps.App):
 
                 if date_label != current_date:
                     if current_date is not None:
-                        menu_items.append(None)  # separator
+                        menu_items.append(None)
                     menu_items.append(rumps.MenuItem(f"── {date_label} ──"))
                     current_date = date_label
 
                 icon = SOURCE_ICONS.get(d["source"], "⚪")
-                source = SOURCE_LABELS.get(d["source"], d["source"])
                 timer = relative_time(d["due_at"])
-                title = d["title"][:45] + "…" if len(d["title"]) > 45 else d["title"]
-                label = f"{icon} [{timer}] {title}"
+                title = d["title"][:40] + "…" if len(d["title"]) > 40 else d["title"]
+                menu_items.append(rumps.MenuItem(f"{icon} [{timer}] {title}"))
 
-                item = rumps.MenuItem(label)
-                menu_items.append(item)
-
-        menu_items.append(None)  # separator
+        menu_items.append(None)
         menu_items.append(rumps.MenuItem("Refresh", callback=self.on_refresh))
         menu_items.append(rumps.MenuItem(f"{len(self.deadlines)} deadlines total"))
         menu_items.append(None)
@@ -144,30 +196,6 @@ class DeadlineMenuBar(rumps.App):
     @rumps.clicked("Refresh")
     def on_refresh(self, _):
         self.refresh_menu()
-
-    def schedule_notifications(self):
-        """Fire macOS notifications for deadlines due in ~1h or ~1d."""
-        import subprocess
-        for d in self.deadlines:
-            try:
-                due = datetime.fromisoformat(d["due_at"].replace("Z", "+00:00"))
-                diff = (due - datetime.now(timezone.utc)).total_seconds()
-                title_short = d["title"][:50]
-                source = SOURCE_LABELS.get(d["source"], d["source"])
-
-                if d["notified_1d"] == 0 and 23 * 3600 <= diff <= 25 * 3600:
-                    script = (f'display notification "Due in ~24 hours" '
-                              f'with title "Due Tomorrow: {title_short}" '
-                              f'subtitle "{source}"')
-                    subprocess.run(["osascript", "-e", script], capture_output=True)
-
-                elif d["notified_1h"] == 0 and 55 * 60 <= diff <= 65 * 60:
-                    script = (f'display notification "Due in ~1 hour" '
-                              f'with title "Due Soon: {title_short}" '
-                              f'subtitle "{source}"')
-                    subprocess.run(["osascript", "-e", script], capture_output=True)
-            except Exception:
-                continue
 
 
 if __name__ == "__main__":
