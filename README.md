@@ -34,6 +34,12 @@ A personal productivity system with three components:
   </tr>
 </table>
 
+### 🎉 Confetti Celebration
+
+Drag any card to **Done** and confetti fires across the whole screen!
+
+<img src="docs/screenshots/confetti.png" width="280" alt="Confetti celebration on Done"/>
+
 ---
 
 ## Architecture
