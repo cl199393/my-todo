@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { useTheme } from '../../contexts/ThemeContext';
 
 function isSameDay(isoString, date) {
   const d = new Date(isoString);
@@ -68,6 +69,7 @@ function TodoItem({ card }) {
 }
 
 export default function DayView({ cards, selectedDate }) {
+  const { theme } = useTheme();
   const dateLabel = selectedDate.toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric',
   });
@@ -95,8 +97,8 @@ export default function DayView({ cards, selectedDate }) {
   const isEmpty = !emergency.length && !deadlinesToday.length && !todos.length;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.dateLabel}>{dateLabel}</Text>
+    <View style={[styles.container, { backgroundColor: theme.cardBg, borderBottomColor: theme.columnBorder || '#eee' }]}>
+      <Text style={[styles.dateLabel, { color: theme.titleColor }]}>{dateLabel}</Text>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <Section
           title="🚨 Emergency"
