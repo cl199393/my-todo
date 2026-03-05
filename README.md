@@ -3,7 +3,7 @@
 ![GitHub repo size](https://img.shields.io/github/repo-size/cl199393/kanban-board-implementation)
 ![GitHub last commit](https://img.shields.io/github/last-commit/cl199393/kanban-board-implementation)
 ![GitHub top language](https://img.shields.io/github/languages/top/cl199393/kanban-board-implementation)
-![GitHub license](https://img.shields.io/github/license/cl199393/kanban-board-implementation)
+![GitHub license](https://img.shields.io/github/license/cl199393/kanban-board-implementation?cache=no)
 
 A personal productivity system with three components:
 
