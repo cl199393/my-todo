@@ -10,7 +10,7 @@
       "id": "canvas_ucf",
       "name": "UCF",
       "base_url": "https://webcourses.ucf.edu",
-      "api_token": "YOUR_UCF_TOKEN"
+      "api_token": "1158~uW4GNTaLYWJV6WAaDZNKTE6ZcHhPTVunKW4Y4Lt9aE8vHPanWwLe9WRAeBkzXRkF"
     }
   ],
   "microsoft": {
@@ -57,10 +57,13 @@
       "changliu19930903@gmail.com"
     ]
   },
-  "exclude_course_patterns": ["STA4"],
+  "exclude_course_patterns": [
+    "STA4"
+  ],
   "todo_calendar": "\u4e2a\u4eba",
   "overleaf_links": {
     "STA7348": "https://www.overleaf.com/project/6966e64ea8528329b6513c46",
-    "CS6750": "https://www.overleaf.com/project/6975a4dfa2734cbe386a6c98"
+    "CS6750": "https://www.overleaf.com/project/6975a4dfa2734cbe386a6c98",
+    "Summer Fellowship": "https://www.overleaf.com/project/69a9238b67b91730ac95bb52"
   }
 }
