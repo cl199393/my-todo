@@ -151,7 +151,7 @@ export default function DeadlinesScreen() {
             overleafLinks={overleafLinks}
             onOverleafLinkAdded={refreshOverleafLinks}
           />
-        )}}
+        )}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor={theme.primary} />}
         contentContainerStyle={filtered.length === 0 ? styles.emptyContainer : styles.listContent}
         ListEmptyComponent={
