@@ -64,11 +64,21 @@ def sync_instance(instance: dict, lookahead_days: int) -> int:
                 continue
             assignments_url = (
                 f"{base}/api/v1/courses/{cid}/assignments"
-                f"?per_page=50&bucket=upcoming&order_by=due_at"
+                f"?per_page=50&order_by=due_at"
             )
+            now = datetime.now(timezone.utc)
+            end = now + timedelta(days=lookahead_days)
             try:
                 for raw in _paginate(client, assignments_url):
-                    # Attach course name for display
+                    due = raw.get("due_at")
+                    if not due:
+                        continue
+                    try:
+                        due_dt = datetime.fromisoformat(due.replace("Z", "+00:00"))
+                    except ValueError:
+                        continue
+                    if due_dt < now or due_dt > end:
+                        continue
                     raw["context_name"] = course.get("name") or course.get("course_code")
                     deadline = from_canvas(raw, instance_id)
                     if deadline:
